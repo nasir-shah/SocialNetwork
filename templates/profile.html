@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Social Network</title>
+    <link rel="stylesheet" href="" />
+    <style>
+    </style>
+</head>
+<body>
+    <div style ="display: block;margin-left: auto; margin-right: auto;">
+        <h1>Welcome {{username}}!</h1>
+        <form id="post_form" >
+            <label for="">Enter Post</label>
+            <input id="post_input" type="text" name="post" placeholder="What's on your mind, {{username}}">
+            <button type="submit">POST</button>
+        </form>
+        <form action="/logout" >
+            <button type="submit">Logout</button>
+        </form>
+        <div id="posts" style="margin:10px; padding:10px; width: 80%; height: 50%;">
+            <div id = 'test'></div>
+            {% for data in posts %}
+            <div id= {{data._id}} style="border: 1px solid gray ;margin: 5px; padding: 5px;" >
+                <b style="font-size: 18px;"> {{data.username}}</b>
+                </br><span style='font-size: 12px;'>{{data.time}}</span>
+                <p style='font-size: 20px;font-weight:lighter;'>{{data.post}}</p>
+                <p><button id="btn_{{data._id}}" onclick="like_count(event)" data="btn_{{data._id}}" data_id="{{data._id}}">Likes:{{data.likes}}</button>&nbsp; 
+                <button onclick="commentOnPost(event)" data_id="{{data._id}}">comment</button>&nbsp;
+                <input id="post_{{data._id}}" type='text'></p>
+                <hr>
+                <div id= "cmnt_{{data._id}}"></div>
+                <button id ="gbtn_{{data._id}}" onclick="getComments(event)" data_id="{{data._id}}">Load Comments ...</button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+<script>
+    const socket = io.connect("http://127.0.0.1:3000");
+    socket.on('connect', function(){
+        let post_input = document.getElementById('post_input');
+        document.getElementById('post_form').onsubmit = function(e) {
+            e.preventDefault();
+            let post = post_input.value.trim();
+            if (post.length){
+                socket.emit('send_post', {
+                    username: '{{username}}',
+                    post: post,
+                    likes: 0
+                })
+            }
+            post_input.value = '';
+            post_input.focus();
+        };
+    })
+
+    socket.on('receive_post', function(data){
+        generateChildComponents(data);
+    })
+
+    function generateChildComponents(data) {
+        const newNode = document.createElement('div');
+        newNode.setAttribute("id", data['id']);
+        newNode.style.border ='1px solid gray'
+        newNode.style.margin = '5px'
+        newNode.style.padding = '5px'
+        newNode.innerHTML = `<b style='font-size: 18px;'>${data.username}</b>
+                            </br><span style='font-size: 12px;'>
+                            ${data.formatted_time}</span> 
+                            <p style='font-size: 20px;font-weight:lighter;'>${data.post}</p> 
+                            <p><button id="btn_${data['id']}" onclick="like_count(event)" data="btn_${data['id']}" data_id="${data['id']}">Likes:${data.likes}</button>&nbsp;
+                            <button onclick="commentOnPost(event)" data_id="${data['id']}">comment</button>&nbsp;
+                            <input id="post_${data['id']}" type='text'></p>
+                            <div id= "cmnt_${data['id']}"></div>
+                            <hr><button id ="gbtn_${data['id']}" onclick="getComments(event)" data_id="${data['id']}">Load Comments ...</button>`
+
+        let parentElement = document.getElementById('test')
+        if (parentElement.nextSibling) {
+            parentElement.parentNode.insertBefore(newNode, parentElement.nextSibling);
+        }
+        else {
+            parentElement.parentNode.appendChild(newNode);
+        }
+    }
+
+    function like_count(e) {
+        e.preventDefault();
+        id = e.target.getAttribute('data')
+        post_id = e.target.getAttribute('data_id')
+        socket.emit('edit_post', {
+                    post_id: post_id,
+                    username:'{{username}}',
+                    type: 'like'
+                })
+    }
+
+    socket.on('like_post', function(data){
+            id = 'btn_' + data.id
+            document.getElementById(id).innerHTML = ' Likes:' + data.likes
+    })
+
+    function commentOnPost(e) {
+            e.preventDefault();
+            id = e.target.getAttribute('data_id')
+            let comment_input = document.getElementById('post_' + id);
+            let comment = comment_input.value.trim();
+            if (comment.length){
+                socket.emit('edit_post', {
+                    post_id: id,
+                    username:'{{username}}',
+                    data: comment,
+                    type: 'comment'
+                })
+                getComments(e)
+            }
+            comment_input.value = '';
+            comment_input.focus();
+        };
+
+    function getComments(e) {
+        e.preventDefault()
+        post_id = e.target.getAttribute('data_id')
+        if(post_id){
+            socket.emit('get_comments', {
+                        post_id: post_id
+                    })
+        }       
+    }
+
+    socket.on('send_comments', function(data){
+        post_id = data[0]['post_id']
+        comments = data[1]
+        let l = [1,2,3,4]
+        if (comments){
+            const myNode = document.getElementById('cmnt_' + post_id);
+            myNode.innerHTML = '';
+            for (comment of comments){
+                const newNode = document.createElement('div');
+                newNode.style.border ='1px solid gray'
+                newNode.style.margin = '5px'
+                newNode.style.padding = '5px'
+                newNode.innerHTML = `@${comment.username} &nbsp;[${comment.time}]:&nbsp;${comment.comment} `
+                document.getElementById('cmnt_' + post_id).appendChild(newNode)
+            }
+        }
+        document.getElementById('gbtn_' + post_id).disabled = true;
+    })
+        socket.on('write_comment', function(data){
+            const newNode = document.createElement('div');
+            newNode.style.border ='1px solid gray'
+            newNode.style.margin = '5px'
+            newNode.style.padding = '5px'
+            newNode.innerHTML = `@${data.username} &nbsp;[${data.formatted_time}]:&nbsp;${data.data}`
+            document.getElementById('cmnt_' + data.post_id).appendChild(newNode)
+    })
+</script>
+</html>
