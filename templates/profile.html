@@ -37,7 +37,8 @@
 </body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
 <script>
-    const socket = io.connect("http://localhost:5000");
+    var socket = io();
+    //const socket = io.connect("http://localhost:5000");
     socket.on('connect', function(){
         let post_input = document.getElementById('post_input');
         document.getElementById('post_form').onsubmit = function(e) {
