@@ -1,8 +1,10 @@
 bson
 werkzeug
 flask
-flask-socketio
+python-engineio==3.13.2
+Flask-SocketIO==4.3.2
+python-socketio==4.6.0
 eventlet
 pymongo
 flask-login
-gunicorn==18.0
+gunicorn
