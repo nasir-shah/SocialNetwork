@@ -5,4 +5,4 @@ flask-socketio
 eventlet
 pymongo
 flask-login
-gunicorn
+gunicorn==18.0
