@@ -37,7 +37,7 @@
 </body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
 <script>
-    const socket = io('http://' + document.domain + ':' + location.port);
+    const socket = io('https://' + document.domain + ':' + location.port);
     //const socket = io.connect(null, {port: 3000, rememberTransport: false});
     socket.on('connect', function(){
         let post_input = document.getElementById('post_input');
