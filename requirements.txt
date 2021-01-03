@@ -8,3 +8,4 @@ eventlet
 pymongo
 flask-login
 gunicorn
+gevent-websocket
